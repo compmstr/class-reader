@@ -1,3 +1,5 @@
 (defproject class-reader "1.0.0-SNAPSHOT"
   :description "FIXME: write description"
-  :dependencies [[org.clojure/clojure "1.3.0"]])
+  :source-path "src"
+  :main class-reader.core
+  :dependencies [[org.clojure/clojure "1.4.0"]])
