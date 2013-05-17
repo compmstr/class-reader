@@ -236,13 +236,22 @@
   [class]
   (map #(method-name class %) (:methods class)))
 
+(defn associate-names
+  [constant-pool]
+  (map (fn [entry]
+         (if-let [name-idx (entry :name-index)]
+           (assoc entry :name (:text (nth constant-pool (dec name-idx))))
+           entry))
+       constant-pool))
+
 (defn read-class
   [filename]
   (let [class-stream (DataInputStream. (io/input-stream filename))]
     (let [magic (read-u4 class-stream)
           minor-version (read-u2 class-stream)
           major-version (read-u2 class-stream)
-          constant-pool (read-constant-pool class-stream)
+          constant-pool (associate-names
+                         (read-constant-pool class-stream))
           access-flags (read-u2 class-stream)
           this-class (read-u2 class-stream)
           super-class (read-u2 class-stream)
