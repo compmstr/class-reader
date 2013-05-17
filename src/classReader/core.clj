@@ -1,4 +1,5 @@
-(ns class-reader.core
+(ns classReader.core
+  (:gen-class)
   (:require [clojure.java.io :as io])
   (:import [java.io DataInputStream]
            [java.nio ByteBuffer]))
@@ -53,6 +54,11 @@
    0x0040 :volatile
    0x0080 :transient})
 
+(defn- cpool-tag
+  [tag & kvs]
+  (merge {:tag tag :entry-type (ctag-types tag)}
+         (apply hash-map kvs)))
+  
 (defmulti read-cpool-entry
   (fn [tag stream] (ctag-types tag)))
 (defmethod read-cpool-entry
@@ -61,65 +67,65 @@
   (let* [num-bytes (read-u2 stream)
          bytes (doall (take num-bytes (repeatedly #(read-u1 stream))))
          text (apply str (map char bytes))]
-    {:tag tag :entry-type (ctag-types tag) :num-bytes num-bytes :bytes bytes :text text}
+    (cpool-tag tag :num-bytes num-bytes :bytes bytes :text text)
     ))
 (defmethod read-cpool-entry
   :integer
   [tag stream]
-  {:tag tag :entry-type (ctag-types tag) :bytes (read-u4 stream)}
+  (cpool-tag tag :bytes (read-u4 stream))
   )
 (defmethod read-cpool-entry
   :float
   [tag stream]
-  {:tag tag :entry-type (ctag-types tag) :value (read-float stream)}
+  (cpool-tag tag :value (read-float stream))
   )
 (defmethod read-cpool-entry
   :long
   [tag stream]
-    {:tag tag :entry-type (ctag-types tag) :value (read-long stream)}
+    (cpool-tag tag :value (read-long stream))
     )
 (defmethod read-cpool-entry
   :double
   [tag stream]
-    {:tag tag :entry-type (ctag-types tag) :value (read-double stream)}
+    (cpool-tag tag :value (read-double stream))
     )
 (defmethod read-cpool-entry
   :class
   [tag stream]
-  {:tag tag :entry-type (ctag-types tag) :name-index (read-u2 stream)}
+  (cpool-tag tag :name-index (read-u2 stream))
   )
 (defmethod read-cpool-entry
   :string
   [tag stream]
-  {:tag tag :entry-type (ctag-types tag) :string-index (read-u2 stream)}
+  (cpool-tag tag :string-index (read-u2 stream))
   )
 (defmethod read-cpool-entry
   :fieldref
   [tag stream]
   (let [class-index (read-u2 stream)
         name-type-index (read-u2 stream)]
-    {:tag tag :entry-type (ctag-types tag) :class-index class-index :name-type-index name-type-index}
+    (cpool-tag tag :class-index class-index :name-type-index name-type-index)
     ))
 (defmethod read-cpool-entry
   :methodref
   [tag stream]
   (let [class-index (read-u2 stream)
         name-type-index (read-u2 stream)]
-    {:tag tag :entry-type (ctag-types tag) :class-index class-index :name-type-index name-type-index}
+    (cpool-tag tag :class-index class-index :name-type-index name-type-index)
     ))
 (defmethod read-cpool-entry
   :interfacemethodref
   [tag stream]
   (let [class-index (read-u2 stream)
         name-type-index (read-u2 stream)]
-    {:tag tag :entry-type (ctag-types tag) :class-index class-index :name-type-index name-type-index}
+    (cpool-tag tag :class-index class-index :name-type-index name-type-index)
     ))
 (defmethod read-cpool-entry
   :nameandtype
   [tag stream]
   (let [name-index (read-u2 stream)
         descriptor-index (read-u2 stream)]
-    {:tag tag :entry-type (ctag-types tag) :name-index name-index :descriptor-index descriptor-index}
+    (cpool-tag tag :name-index name-index :descriptor-index descriptor-index)
     ))
 (defn read-constant-pool
   [stream]
